@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 rustyline = "18.0.0"
+inkwell = { version = "0.9", features = ["llvm21-1-prefer-dynamic", "no-libffi-linking"] }

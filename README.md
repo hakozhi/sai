@@ -1,5 +1,9 @@
 # 程式語言 Sai
 
+## 開發文件
+
+- [為 Sai 實作 LLVM Backend](docs/llvm-backend-tutorial.md)
+
 ## 安裝
 
 ```
@@ -42,12 +46,12 @@ true ;; boolean
 
 ```lisp
 (def fib ([int n] int)
-  (if (< n 2)
-    n
-  :else
-    (+ (fib (- n 2))
-       (fib (- n 1)))
-  )
+    (if (< n 2)
+        n
+    :else
+        (+ (fib (- n 2))
+           (fib (- n 1)))
+    )
 )
 
 ;; lambda functions
@@ -77,4 +81,3 @@ true ;; boolean
   "Aaron"
 )
 ```
-

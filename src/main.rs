@@ -5,6 +5,7 @@ mod cli;
 mod diagnostics;
 mod interpreter;
 mod parser;
+mod compiler;
 mod types;
 
 fn main() {
