@@ -1,13 +1,9 @@
 # 程式語言 Sai
 
-## 開發文件
-
-- [為 Sai 實作 LLVM Backend](docs/llvm-backend-tutorial.md)
-
 ## 安裝
 
 ```
-git clone git@github.com:yubairuime/sai.git
+git clone git@github.com:hakozhi/sai.git
 cargo install --path .
 ```
 
