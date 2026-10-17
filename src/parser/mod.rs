@@ -202,10 +202,8 @@ impl Parser {
                     return Expr::Error;
                 }
             };
-            let closure = self.parse_closure(&TokenTreeList {
-                position: tokenlist.items[2].get_position(),
-                items: tokenlist.items[2..].to_vec(),
-            });
+
+            let closure = self.parse_closure_parts(tokenlist.position.clone(), &tokenlist.items[2], &tokenlist.items[3..]);
 
             if let Expr::Closure(closure) = closure {
                 Expr::Defun(Defun {
@@ -325,35 +323,33 @@ impl Parser {
             self.add_diagnostic(tokenlist.position.clone(), "improper form of defining a closure");
             Expr::Error
         } else {
-            let signature = tokenlist.items[1].clone();
-            let body = self.parse_expr_sequence_as_block(&tokenlist.items[2..], tokenlist.items[2].get_position());
-
-            if let TokenTree::Token(token) = signature {
-                self.add_diagnostic(token.position, "unexpected token");
-                Expr::Error
-            } else if let TokenTree::List(mut list) = signature {
-                let (parameters, return_ty) = match self.parse_closure_signature(&mut list) {
-                    Ok((params, return_ty)) => (params, return_ty),
-                    Err(mut e) => {
-                        self.diagnostics.append(&mut e);
-                        return Expr::Error;
-                    }
-                };
-
-                if let Expr::Block(body) = body {
-                    Expr::Closure(Closure {
-                        position: tokenlist.position.clone(),
-                        params: parameters,
-                        return_type: return_ty,
-                        body: body,
-                    })
-                } else {
-                    unreachable!()
-                }
-            } else {
-                unreachable!()
-            }
+            self.parse_closure_parts(tokenlist.position.clone(), &tokenlist.items[1], &tokenlist.items[2..])
         }
+    }
+
+    fn parse_closure_parts(&mut self, position: Position, signature: &TokenTree, items: &[TokenTree]) -> Expr {
+        let body = self.parse_expr_sequence_as_block(items, items[0].get_position());
+        let TokenTree::List(list) = signature else {
+            self.add_diagnostic(signature.get_position(), "unexpected token");
+            return Expr::Error;
+        };
+
+        let (parameters, return_ty) = match self.parse_closure_signature(&mut list.clone()) {
+            Ok((params, return_ty)) => (params, return_ty),
+            Err(mut e) => {
+                self.diagnostics.append(&mut e);
+                return Expr::Error;
+            }
+        };
+
+        let Expr::Block(body) = body else { unreachable!() };
+
+        Expr::Closure(Closure {
+            position: position,
+            params: parameters,
+            return_type: return_ty,
+            body: body,
+        })
     }
 
     fn parse_closure_signature(&mut self, tokenlist: &mut TokenTreeList) -> Result<ClosureSignature, Vec<Diagnostic>> {
@@ -380,21 +376,44 @@ impl Parser {
                 }
             };
 
-            let mut parameters: Vec<Parameter> = vec![];
-
-            for item in &tokenlist.items {
-                match item {
-                    TokenTree::Token(token) => {
-                        diagnostics.push(Diagnostic::new(token.position.clone(), "expected parameter"));
+            match self.parse_closure_parameters(&tokenlist.items) {
+                Ok(parameters) => {
+                    if diagnostics.is_empty() {
+                        Ok((parameters, return_ty))
+                    } else {
+                        Err(diagnostics)
                     }
-                    TokenTree::List(list) => match self.parse_parameter(list) {
-                        Ok(parameter) => parameters.push(parameter),
-                        Err(e) => diagnostics.push(e),
-                    },
+                }
+                Err(mut e) => {
+                    diagnostics.append(&mut e);
+                    Err(diagnostics)
                 }
             }
 
-            if diagnostics.is_empty() { Ok((parameters, return_ty)) } else { Err(diagnostics) }
+        }
+    }
+
+    fn parse_closure_parameters(&mut self, items: &Vec<TokenTree>) -> Result<Vec<Parameter>, Vec<Diagnostic>> {
+        let mut parameters: Vec<Parameter> = vec![];
+        let mut diagnostics: Vec<Diagnostic> = vec![];
+
+        for item in items {
+            match item {
+                TokenTree::Token(_) => diagnostics.push(Diagnostic::new(item.get_position(), "expected parameter")),
+                TokenTree::List(parameter_annotation) => {
+                    match self.parse_parameter(parameter_annotation) {
+                        Ok(parameter) => parameters.push(parameter),
+                        Err(e) => diagnostics.push(e),
+                    }
+                }
+            }
+        }
+
+        if diagnostics.is_empty() {
+            Ok(parameters)
+        }
+        else {
+            Err(diagnostics)
         }
     }
 
