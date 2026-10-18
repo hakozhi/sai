@@ -55,7 +55,7 @@ impl Lexer {
                     self.position.line += 1;
                     self.position.col = 1;
                 }
-                '(' => {
+                '(' | '[' => {
                     tokens.push(Token {
                         ty: TokenType::LParen,
                         value: "".to_string(),
@@ -64,7 +64,7 @@ impl Lexer {
 
                     self.advance();
                 }
-                ')' => {
+                ')' | ']' => {
                     tokens.push(Token {
                         ty: TokenType::RParen,
                         value: "".to_string(),
@@ -159,7 +159,7 @@ impl Lexer {
 
         while let Some(ch) = self.current_char {
             match ch {
-                ' ' | '\t' | '\n' | '\r' | '(' | ')' | '"' => break,
+                ' ' | '\t' | '\n' | '\r' | '(' | ')' | '[' | ']' | '"' => break,
                 _ => {
                     symbol.push(ch);
                     self.advance();
