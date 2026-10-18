@@ -60,7 +60,7 @@ impl Interpreter {
         };
 
         match variable.value.as_str() {
-            "+" | "-" | "*" | "/" | "=" | "<" | "<=" | ">" | ">=" | "len" | "nth" => Some(variable.value.as_str()),
+            "+" | "-" | "*" | "/" | "=" | "<" | "<=" | ">" | ">=" => Some(variable.value.as_str()),
             _ => None,
         }
     }
